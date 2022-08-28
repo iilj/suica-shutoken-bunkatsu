@@ -52,7 +52,17 @@
     <div class="container">
       <h2>説明</h2>
       <div>
-        <p>運賃分割．</p>
+        <p>
+          指定された区間を，同一運賃区間が最多となるように分割します．<a
+            href="https://www.jrepoint.jp/point/append/railway/"
+            >リピートポイントサービス</a
+          >でポイントを貯めるための計画に使えます．
+        </p>
+        <p>
+          <a href="https://www.jreast.co.jp/suica/area/tokyo/"
+            >Suica首都圏利用可能エリア</a
+          >内の駅を入力してください．
+        </p>
       </div>
 
       <h2>Form</h2>
@@ -115,6 +125,10 @@
             Submit
           </button>
         </div>
+      </div>
+
+      <div id="js-ssb-alert-parent" style="display: none">
+        <div id="js-ssb-alert" class="alert alert-danger" role="alert"></div>
       </div>
 
       <div id="js-ssb-result" style="display: none">

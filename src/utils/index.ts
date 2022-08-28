@@ -28,3 +28,6 @@ export const saveFile = (content: string, filename: string): void => {
 export const getSum = (ar: number[]): number => {
     return ar.reduce((partialSum, a) => partialSum + a, 0);
 };
+export function isNumber(v: unknown): v is number {
+    return typeof v === 'number' && Number.isFinite(v);
+}

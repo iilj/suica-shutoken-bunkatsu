@@ -99,6 +99,13 @@ void (async () => {
     assertIsDefined(submitButton, 'submitButton');
     assert(submitButton instanceof HTMLButtonElement);
 
+    const alertParentElement = document.getElementById('js-ssb-alert-parent');
+    assertIsDefined(alertParentElement, 'alertParentElement');
+    assert(alertParentElement instanceof HTMLDivElement);
+    const alertElement = document.getElementById('js-ssb-alert');
+    assertIsDefined(alertElement, 'alertElement');
+    assert(alertElement instanceof HTMLDivElement);
+
     const resultParent = document.getElementById('js-ssb-result');
     assertIsDefined(resultParent, 'resultParent');
     assert(resultParent instanceof HTMLDivElement);
@@ -127,267 +134,283 @@ void (async () => {
     });
 
     submitButton.addEventListener('click', () => {
-        // 出発駅，到着駅のインデックスを特定する
-        const name0 = beginInput.value;
-        const name1 = endInput.value;
-        if (!railwayGraph.hasStationName(name0)) {
-            throw Error(`出発駅名が不正です: ${name0}`);
-        }
-        if (!railwayGraph.hasStationName(name1)) {
-            throw Error(`到着駅名が不正です: ${name1}`);
-        }
-        const idx0 = railwayGraph.getStationIdxByName(name0);
-        const idx1 = railwayGraph.getStationIdxByName(name1);
+        alertParentElement.style.display = 'none';
 
-        const displayKilo = displayKiloCheckbox.checked;
-
-        // 経由駅のインデックスを特定する
-        const stationIdxs = [idx0];
-        const stationStopOptionsDesignated: StationStopOption[] = [StationStopOptionsObj.MUST];
-        midInputInputs.forEach(([midTextInput, midSelect]) => {
-            const midNname = midTextInput.value.trim();
-            if (midNname === '') return;
-            if (!railwayGraph.hasStationName(midNname)) {
-                return;
+        try {
+            // 出発駅，到着駅のインデックスを特定する
+            const name0 = beginInput.value;
+            const name1 = endInput.value;
+            if (!railwayGraph.hasStationName(name0)) {
+                throw Error(
+                    `出発駅名が不正です: ${name0}．Suica首都圏利用可能エリアに含まれている駅を指定してください．`
+                );
             }
-            const midIdx = railwayGraph.getStationIdxByName(midNname);
-            stationIdxs.push(midIdx);
+            if (!railwayGraph.hasStationName(name1)) {
+                throw Error(
+                    `到着駅名が不正です: ${name1}．Suica首都圏利用可能エリアに含まれている駅を指定してください．`
+                );
+            }
+            const idx0 = railwayGraph.getStationIdxByName(name0);
+            const idx1 = railwayGraph.getStationIdxByName(name1);
 
-            const stopOption = Number(midSelect.value);
-            assert(
-                stopOption === StationStopOptionsObj.NOT_DESIGNATED ||
-                    stopOption === StationStopOptionsObj.MUST ||
-                    stopOption === StationStopOptionsObj.MUST_NOT
-            );
-            stationStopOptionsDesignated.push(stopOption);
-        });
-        stationIdxs.push(idx1);
-        stationStopOptionsDesignated.push(StationStopOptionsObj.MUST);
-        console.log(stationIdxs, stationStopOptionsDesignated);
+            const displayKilo = displayKiloCheckbox.checked;
 
-        // ★ 経路検索＋運賃分割を実行
-        sameFareSolver.build(stationIdxs, stationStopOptionsDesignated);
-
-        resultParent.style.display = 'block'; // display: none から可視状態に回復
-        const routes = sameFareSolver.getRouteSegments();
-
-        // ルート表示用テーブル更新
-        {
-            resultRoute.innerHTML = '';
-            const routeTable = document.createElement('table');
-            routeTable.classList.add('table');
-            routeTable.classList.add('table-bordered');
-
-            const fare = sameFareSolver.getFare();
-            console.log(routes, fare);
-            const kilo10list = sameFareSolver.getKilo10list();
-            const fareElement = document.createElement('p');
-            fareElement.innerHTML = `通常運賃: ${fare} 円`;
-            resultRoute.appendChild(fareElement);
-
-            // thead
-            {
-                const thead = document.createElement('thead');
-                thead.classList.add('table-light');
-                if (displayKilo) {
-                    thead.innerHTML = `<tr>
-                        <th class="text-center" rowspan="2">区間</th>
-                        <th class="text-center" rowspan="2">路線名</th>
-                        <th class="text-center" rowspan="2">駅数</th>
-                        <th class="text-center" colspan="5">営業キロ [km]</th>
-                    </tr>
-                    <tr>
-                        <th class="text-center">地方交通線</th>
-                        <th class="text-center">地方交通線<br>（換算キロ）</th>
-                        <th class="text-center">幹線</th>
-                        <th class="text-center">電車特定区間</th>
-                        <th class="text-center">山手線内</th>
-                    </tr>`;
-                } else {
-                    thead.innerHTML = `<tr>
-                        <th class="text-center">区間</th>
-                        <th class="text-center">路線名</th>
-                        <th class="text-center">駅数</th>
-                    </tr>`;
+            // 経由駅のインデックスを特定する
+            const stationIdxs = [idx0];
+            const stationStopOptionsDesignated: StationStopOption[] = [StationStopOptionsObj.MUST];
+            midInputInputs.forEach(([midTextInput, midSelect]) => {
+                const midNname = midTextInput.value.trim();
+                if (midNname === '') return;
+                if (!railwayGraph.hasStationName(midNname)) {
+                    return;
                 }
-                routeTable.appendChild(thead);
-            }
-            // tbody
+                const midIdx = railwayGraph.getStationIdxByName(midNname);
+                stationIdxs.push(midIdx);
+
+                const stopOption = Number(midSelect.value);
+                assert(
+                    stopOption === StationStopOptionsObj.NOT_DESIGNATED ||
+                        stopOption === StationStopOptionsObj.MUST ||
+                        stopOption === StationStopOptionsObj.MUST_NOT
+                );
+                stationStopOptionsDesignated.push(stopOption);
+            });
+            stationIdxs.push(idx1);
+            stationStopOptionsDesignated.push(StationStopOptionsObj.MUST);
+            console.log(stationIdxs, stationStopOptionsDesignated);
+
+            // ★ 経路検索＋運賃分割を実行
+            sameFareSolver.build(stationIdxs, stationStopOptionsDesignated);
+            const routes = sameFareSolver.getRouteSegments();
+
+            // ルート表示用テーブル更新
             {
-                const tbody = document.createElement('tbody');
-                let stationSum = 0;
-                routes.forEach((route) => {
-                    const tr = document.createElement('tr');
-                    const routeLabel = `${railwayGraph.getStationNameByIdx(
-                        route.stationIdxs[0]
-                    )} → ${railwayGraph.getStationNameByIdx(route.stationIdxs[route.stationIdxs.length - 1])}`;
-                    if (displayKilo) {
-                        tr.innerHTML = `
-                        <td>${routeLabel}</td>
-                        <td>${route.lineName}</td>
-                        <td class="text-end">${route.stationIdxs.length - 1}</td>
-                        <td class="text-end">${(route.kilo10list[0] / 10).toFixed(1)}</td>
-                        <td class="text-end">${(route.kilo10list[4] / 10).toFixed(1)}</td>
-                        <td class="text-end">${(route.kilo10list[1] / 10).toFixed(1)}</td>
-                        <td class="text-end">${(route.kilo10list[2] / 10).toFixed(1)}</td>
-                        <td class="text-end">${(route.kilo10list[3] / 10).toFixed(1)}</td>
-                        `;
-                    } else {
-                        tr.innerHTML = `
-                        <td>${routeLabel}</td>
-                        <td>${route.lineName}</td>
-                        <td class="text-end">${route.stationIdxs.length - 1}</td>
-                        `;
-                    }
-                    tbody.appendChild(tr);
-                    stationSum += route.stationIdxs.length - 1;
-                });
+                resultRoute.innerHTML = '';
+                const routeTable = document.createElement('table');
+                routeTable.classList.add('table');
+                routeTable.classList.add('table-bordered');
+
+                const fare = sameFareSolver.getFare();
+                console.log(routes, fare);
+                const kilo10 = sameFareSolver.getKilo10();
+                const fareElement = document.createElement('p');
+                fareElement.innerHTML = `通常運賃: ${fare} 円`;
+                resultRoute.appendChild(fareElement);
+
+                // thead
                 {
-                    // 合計
-                    const tr = document.createElement('tr');
+                    const thead = document.createElement('thead');
+                    thead.classList.add('table-light');
                     if (displayKilo) {
-                        tr.innerHTML = `
-                        <td colspan="2" class="table-active">合計</td>
-                        <td class="text-end table-active">${stationSum}</td>
-                        <td class="text-end table-active">${(kilo10list[0] / 10).toFixed(1)}</td>
-                        <td class="text-end table-active">${(kilo10list[4] / 10).toFixed(1)}</td>
-                        <td class="text-end table-active">${(kilo10list[1] / 10).toFixed(1)}</td>
-                        <td class="text-end table-active">${(kilo10list[2] / 10).toFixed(1)}</td>
-                        <td class="text-end table-active">${(kilo10list[3] / 10).toFixed(1)}</td>
-                        `;
+                        thead.innerHTML = `<tr>
+                            <th class="text-center" rowspan="2">区間</th>
+                            <th class="text-center" rowspan="2">路線名</th>
+                            <th class="text-center" rowspan="2">駅数</th>
+                            <th class="text-center" colspan="5">営業キロ [km]</th>
+                        </tr>
+                        <tr>
+                            <th class="text-center">地方交通線</th>
+                            <th class="text-center">地方交通線<br>（換算キロ）</th>
+                            <th class="text-center">幹線</th>
+                            <th class="text-center">電車特定区間</th>
+                            <th class="text-center">山手線内</th>
+                        </tr>`;
                     } else {
-                        tr.innerHTML = `
-                        <td colspan="2" class="table-active">合計</td>
-                        <td class="text-end table-active">${stationSum}</td>
-                        `;
+                        thead.innerHTML = `<tr>
+                            <th class="text-center">区間</th>
+                            <th class="text-center">路線名</th>
+                            <th class="text-center">駅数</th>
+                        </tr>`;
                     }
-                    tbody.appendChild(tr);
+                    routeTable.appendChild(thead);
                 }
-                routeTable.appendChild(tbody);
-            }
-            resultRoute.appendChild(routeTable);
-        }
-
-        {
-            resultSplit.innerHTML = '';
-            const rank = sameFareSolver.getDetailedTargetFarePaths();
-            rank.forEach(({ targetFare, maxCount, fareSum, pattern, detailedPathList }, index) => {
-                if (pattern === 0) return;
-                const div = document.createElement('div');
-                div.classList.add('accordion-item');
-
-                const collapseId = `collapse${index}`;
-
-                const h3 = document.createElement('h3');
-                h3.id = `heading${index}`;
-                h3.classList.add('accordion-header');
-                h3.innerHTML = `<button class="accordion-button" type="button" 
-                    data-bs-toggle="collapse" data-bs-target="#${collapseId}"
-                     aria-expanded="true" aria-controls="collapseOne">
-                     ${targetFare}円区間：${maxCount}回（最安${fareSum}円，${pattern}通り）
-                </button>`;
-                div.appendChild(h3);
-
-                const collapsed = document.createElement('div');
-                collapsed.id = collapseId;
-                collapsed.classList.add('accordion-collapse');
-                collapsed.classList.add('collapse');
-                collapsed.setAttribute('aria-labelledby', `${h3.id}`);
-                collapsed.setAttribute('data-bs-parent', '#js-ssb-reuslt-split');
-                div.appendChild(collapsed);
-
-                const accordionBody = document.createElement('div');
-                accordionBody.classList.add('accordion-body');
-
-                if (pattern > MAX_PATH_COUNT) {
-                    const alertDiv = document.createElement('div');
-                    alertDiv.classList.add('alert');
-                    alertDiv.classList.add('alert-warning');
-                    alertDiv.setAttribute('role', 'alert');
-                    alertDiv.innerText = `${
-                        MAX_PATH_COUNT + 1
-                    }通り以上のパターンがあります．${MAX_PATH_COUNT}通りのみ表示しています．`;
-                    accordionBody.appendChild(alertDiv);
-                }
-
-                detailedPathList.forEach((detailedPath, index) => {
-                    const h4 = document.createElement('h4');
-                    h4.innerText = `パターン${index + 1}`;
-                    accordionBody.appendChild(h4);
-
-                    const table = document.createElement('table');
-                    table.classList.add('table');
-                    table.classList.add('table-sm');
-                    table.classList.add('table-bordered');
-                    // thead
-                    {
-                        const thead = document.createElement('thead');
-                        thead.classList.add('table-light');
-                        if (displayKilo) {
-                            thead.innerHTML = `<tr>
-                                <th class="text-center" rowspan="2">区間</th>
-                                <th class="text-center" rowspan="2">路線名</th>
-                                <th class="text-center" rowspan="2">運賃 [円]</th>
-                                <th class="text-center" rowspan="2">駅数</th>
-                                <th class="text-center" colspan="5">営業キロ [km]</th>
-                            </tr>
-                            <tr>
-                                <th class="text-center">地方交通線</th>
-                                <th class="text-center">地方交通線<br>（換算キロ）</th>
-                                <th class="text-center">幹線</th>
-                                <th class="text-center">電車特定区間</th>
-                                <th class="text-center">山手線内</th>
-                            </tr>`;
-                        } else {
-                            thead.innerHTML = `<tr>
-                                <th class="text-center">区間</th>
-                                <th class="text-center">路線名</th>
-                                <th class="text-center">運賃 [円]</th>
-                                <th class="text-center" rowspan="2">駅数</th>
-                            </tr>`;
-                        }
-                        table.appendChild(thead);
-                    }
-
-                    // tbody
+                // tbody
+                {
                     const tbody = document.createElement('tbody');
-
-                    detailedPath.forEach((segment) => {
-                        const { startStationName, terminalStationName, lineNames, fare, kilo10list } = segment;
+                    let stationSum = 0;
+                    routes.forEach((route) => {
                         const tr = document.createElement('tr');
+                        const routeLabel = `${railwayGraph.getStationNameByIdx(
+                            route.stationIdxs[0]
+                        )} → ${railwayGraph.getStationNameByIdx(route.stationIdxs[route.stationIdxs.length - 1])}`;
                         if (displayKilo) {
                             tr.innerHTML = `
-                            <td>${startStationName} → ${terminalStationName}</td>
-                            <td>${lineNames.join('→')}</td>
-                            <td class="text-end${fare === targetFare ? ' table-success' : ''}">${fare}</td>
-                            <td class="text-end">${segment.stationIdxs.length - 1}</td>
-                            <td class="text-end">${(kilo10list[0] / 10).toFixed(1)}</td>
-                            <td class="text-end">${(kilo10list[4] / 10).toFixed(1)}</td>
-                            <td class="text-end">${(kilo10list[1] / 10).toFixed(1)}</td>
-                            <td class="text-end">${(kilo10list[2] / 10).toFixed(1)}</td>
-                            <td class="text-end">${(kilo10list[3] / 10).toFixed(1)}</td>
+                            <td>${routeLabel}</td>
+                            <td>${route.lineName}</td>
+                            <td class="text-end">${route.stationIdxs.length - 1}</td>
+                            <td class="text-end">${(route.kilo10[0] / 10).toFixed(1)}</td>
+                            <td class="text-end">${(route.kilo10[4] / 10).toFixed(1)}</td>
+                            <td class="text-end">${(route.kilo10[1] / 10).toFixed(1)}</td>
+                            <td class="text-end">${(route.kilo10[2] / 10).toFixed(1)}</td>
+                            <td class="text-end">${(route.kilo10[3] / 10).toFixed(1)}</td>
                             `;
                         } else {
                             tr.innerHTML = `
-                            <td>${startStationName} → ${terminalStationName}</td>
-                            <td>${lineNames.join('→')}</td>
-                            <td class="text-end${fare === targetFare ? ' table-success' : ''}">${fare}</td>
-                            <td class="text-end">${segment.stationIdxs.length - 1}</td>
+                            <td>${routeLabel}</td>
+                            <td>${route.lineName}</td>
+                            <td class="text-end">${route.stationIdxs.length - 1}</td>
                             `;
                         }
                         tbody.appendChild(tr);
+                        stationSum += route.stationIdxs.length - 1;
                     });
+                    {
+                        // 合計
+                        const tr = document.createElement('tr');
+                        if (displayKilo) {
+                            tr.innerHTML = `
+                            <td colspan="2" class="table-active">合計</td>
+                            <td class="text-end table-active">${stationSum}</td>
+                            <td class="text-end table-active">${(kilo10[0] / 10).toFixed(1)}</td>
+                            <td class="text-end table-active">${(kilo10[4] / 10).toFixed(1)}</td>
+                            <td class="text-end table-active">${(kilo10[1] / 10).toFixed(1)}</td>
+                            <td class="text-end table-active">${(kilo10[2] / 10).toFixed(1)}</td>
+                            <td class="text-end table-active">${(kilo10[3] / 10).toFixed(1)}</td>
+                            `;
+                        } else {
+                            tr.innerHTML = `
+                            <td colspan="2" class="table-active">合計</td>
+                            <td class="text-end table-active">${stationSum}</td>
+                            `;
+                        }
+                        tbody.appendChild(tr);
+                    }
+                    routeTable.appendChild(tbody);
+                }
+                resultRoute.appendChild(routeTable);
+            }
 
-                    table.appendChild(tbody);
-                    accordionBody.appendChild(table);
+            {
+                resultSplit.innerHTML = '';
+                const rank = sameFareSolver.getDetailedTargetFarePaths();
+                rank.forEach(({ targetFare, maxCount, fareSum, pattern, detailedPathList }, index) => {
+                    if (pattern === 0) return;
+                    const div = document.createElement('div');
+                    div.classList.add('accordion-item');
+
+                    const collapseId = `collapse${index}`;
+
+                    const h3 = document.createElement('h3');
+                    h3.id = `heading${index}`;
+                    h3.classList.add('accordion-header');
+                    h3.innerHTML = `<button class="accordion-button" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+                        aria-expanded="true" aria-controls="collapseOne">
+                        ${targetFare}円区間：${maxCount}回（最安${fareSum}円，${pattern}通り）
+                    </button>`;
+                    div.appendChild(h3);
+
+                    const collapsed = document.createElement('div');
+                    collapsed.id = collapseId;
+                    collapsed.classList.add('accordion-collapse');
+                    collapsed.classList.add('collapse');
+                    collapsed.setAttribute('aria-labelledby', `${h3.id}`);
+                    collapsed.setAttribute('data-bs-parent', '#js-ssb-reuslt-split');
+                    div.appendChild(collapsed);
+
+                    const accordionBody = document.createElement('div');
+                    accordionBody.classList.add('accordion-body');
+
+                    if (pattern > MAX_PATH_COUNT) {
+                        const alertDiv = document.createElement('div');
+                        alertDiv.classList.add('alert');
+                        alertDiv.classList.add('alert-warning');
+                        alertDiv.setAttribute('role', 'alert');
+                        alertDiv.innerText = `${
+                            MAX_PATH_COUNT + 1
+                        }通り以上のパターンがあります．${MAX_PATH_COUNT}通りのみ表示しています．`;
+                        accordionBody.appendChild(alertDiv);
+                    }
+
+                    detailedPathList.forEach((detailedPath, index) => {
+                        const h4 = document.createElement('h4');
+                        h4.innerText = `パターン${index + 1}`;
+                        accordionBody.appendChild(h4);
+
+                        const table = document.createElement('table');
+                        table.classList.add('table');
+                        table.classList.add('table-sm');
+                        table.classList.add('table-bordered');
+                        // thead
+                        {
+                            const thead = document.createElement('thead');
+                            thead.classList.add('table-light');
+                            if (displayKilo) {
+                                thead.innerHTML = `<tr>
+                                    <th class="text-center" rowspan="2">区間</th>
+                                    <th class="text-center" rowspan="2">路線名</th>
+                                    <th class="text-center" rowspan="2">運賃 [円]</th>
+                                    <th class="text-center" rowspan="2">駅数</th>
+                                    <th class="text-center" colspan="5">営業キロ [km]</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center">地方交通線</th>
+                                    <th class="text-center">地方交通線<br>（換算キロ）</th>
+                                    <th class="text-center">幹線</th>
+                                    <th class="text-center">電車特定区間</th>
+                                    <th class="text-center">山手線内</th>
+                                </tr>`;
+                            } else {
+                                thead.innerHTML = `<tr>
+                                    <th class="text-center">区間</th>
+                                    <th class="text-center">路線名</th>
+                                    <th class="text-center">運賃 [円]</th>
+                                    <th class="text-center" rowspan="2">駅数</th>
+                                </tr>`;
+                            }
+                            table.appendChild(thead);
+                        }
+
+                        // tbody
+                        const tbody = document.createElement('tbody');
+
+                        detailedPath.forEach((segment) => {
+                            const { startStationName, terminalStationName, lineNames, fare, kilo10 } = segment;
+                            const tr = document.createElement('tr');
+                            if (displayKilo) {
+                                tr.innerHTML = `
+                                <td>${startStationName} → ${terminalStationName}</td>
+                                <td>${lineNames.join('→')}</td>
+                                <td class="text-end${fare === targetFare ? ' table-success' : ''}">${fare}</td>
+                                <td class="text-end">${segment.stationIdxs.length - 1}</td>
+                                <td class="text-end">${(kilo10[0] / 10).toFixed(1)}</td>
+                                <td class="text-end">${(kilo10[4] / 10).toFixed(1)}</td>
+                                <td class="text-end">${(kilo10[1] / 10).toFixed(1)}</td>
+                                <td class="text-end">${(kilo10[2] / 10).toFixed(1)}</td>
+                                <td class="text-end">${(kilo10[3] / 10).toFixed(1)}</td>
+                                `;
+                            } else {
+                                tr.innerHTML = `
+                                <td>${startStationName} → ${terminalStationName}</td>
+                                <td>${lineNames.join('→')}</td>
+                                <td class="text-end${fare === targetFare ? ' table-success' : ''}">${fare}</td>
+                                <td class="text-end">${segment.stationIdxs.length - 1}</td>
+                                `;
+                            }
+                            tbody.appendChild(tr);
+                        });
+
+                        table.appendChild(tbody);
+                        accordionBody.appendChild(table);
+                    });
+                    collapsed.appendChild(accordionBody);
+
+                    resultSplit.appendChild(div);
                 });
-                collapsed.appendChild(accordionBody);
+                if (resultSplit.innerHTML === '') {
+                    resultSplit.innerHTML =
+                        '（結果がありません．折り返し駅が「途中下車しない」駅に指定されていないか確認してください．）';
+                }
+            }
 
-                resultSplit.appendChild(div);
-            });
-            if (resultSplit.innerHTML === '') {
-                resultSplit.innerHTML =
-                    '（結果がありません．折り返し駅が「途中下車しない」駅に指定されていないか確認してください．）';
+            resultParent.style.display = 'block';
+        } catch (e) {
+            if (e instanceof Error) {
+                resultParent.style.display = 'none';
+                alertElement.innerText = `Error: ${e.message}`;
+                alertParentElement.style.display = 'block';
+            } else {
+                throw e;
             }
         }
     });

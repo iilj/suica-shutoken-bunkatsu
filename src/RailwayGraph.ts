@@ -1,5 +1,10 @@
+import { assertKilo10, Kilo10 } from './brandings/Kilo10';
 import { assert, assertIsDefined } from './utils';
 import { Dijkstra } from './utils/Dijkstra';
+import { Nominal } from './utils/Nominal';
+
+/** ダイクストラグラフ上の頂点インデックス（首都圏 Suica エリア全駅に振られる 0-indexed 連番） */
+export type StationIdxInGraph = Nominal<number, 'StationIdxInGraph'>;
 
 export const KukanTypeObj = {
     /** 地方交通線 */
@@ -30,21 +35,21 @@ interface Line {
     stations: Station[];
 }
 
-interface EdgeInfo {
+export interface EdgeInfo {
     lineName: string;
     lineId: number;
     kansen: boolean;
 
     id0: number;
     id1: number;
-    kilo10: number;
-    kilo10_kansan: number;
+    kilo10: Kilo10;
+    kilo10_kansan: Kilo10;
     kukanType: KukanType;
 }
 
 export class RailwayGraph {
     /** 駅 ID → 駅 index（ダイクストラグラフ上の頂点番号） */
-    private mpStationId2Index: Map<number, number>;
+    private mpStationId2Index: Map<number, StationIdxInGraph>;
     /** 駅 index → 駅 ID */
     private stationIdx2Id: number[];
     /** 駅名 → 駅 ID */
@@ -54,14 +59,14 @@ export class RailwayGraph {
 
     public acData: AutocompleteItem[];
 
-    private edges: Map<number, Map<number, EdgeInfo>>;
+    private edges: Map<StationIdxInGraph, Map<StationIdxInGraph, EdgeInfo>>;
 
     private dijkstra: Dijkstra;
 
     private constructor(dbLines: Line[]) {
         // generate station list
         let stationCounter = 0;
-        this.mpStationId2Index = new Map<number, number>();
+        this.mpStationId2Index = new Map<number, StationIdxInGraph>();
         this.stationIdx2Id = [];
         this.stationIdx2Name = [];
         this.mpStationName2ID = new Map<string, number>();
@@ -72,7 +77,7 @@ export class RailwayGraph {
                     return;
                 }
                 assert(!this.mpStationName2ID.has(station.name));
-                this.mpStationId2Index.set(station.id, stationCounter++);
+                this.mpStationId2Index.set(station.id, stationCounter++ as StationIdxInGraph);
                 this.stationIdx2Id.push(station.id);
                 this.stationIdx2Name.push(station.name);
                 this.mpStationName2ID.set(station.name, station.id);
@@ -80,7 +85,7 @@ export class RailwayGraph {
             });
         });
 
-        this.edges = new Map<number, Map<number, EdgeInfo>>();
+        this.edges = new Map<StationIdxInGraph, Map<StationIdxInGraph, EdgeInfo>>();
 
         // construct dijkstra graph
         this.dijkstra = new Dijkstra(stationCounter);
@@ -102,19 +107,23 @@ export class RailwayGraph {
                 if (this.edges.has(idx1) && this.edges.get(idx1)?.has(idx0)) continue;
 
                 if (!this.edges.has(idx0)) {
-                    this.edges.set(idx0, new Map<number, EdgeInfo>());
+                    this.edges.set(idx0, new Map<StationIdxInGraph, EdgeInfo>());
                 }
                 if (!this.edges.has(idx1)) {
-                    this.edges.set(idx1, new Map<number, EdgeInfo>());
+                    this.edges.set(idx1, new Map<StationIdxInGraph, EdgeInfo>());
                 }
+                const kilo10Diff = station1.kilo10 - station0.kilo10;
+                assertKilo10(kilo10Diff);
+                const kilo10KansanDiff = station1.kilo10_kansan - station0.kilo10_kansan;
+                assertKilo10(kilo10KansanDiff);
                 const edgeInfo: EdgeInfo = {
                     lineName: line.name,
                     lineId: line.id,
                     kansen: line.is_kansen === 1,
                     id0: station0.id,
                     id1: station1.id,
-                    kilo10: station1.kilo10 - station0.kilo10,
-                    kilo10_kansan: station1.kilo10_kansan - station0.kilo10_kansan,
+                    kilo10: kilo10Diff,
+                    kilo10_kansan: kilo10KansanDiff,
                     kukanType: station1.kukan_type,
                 };
                 this.edges.get(idx0)?.set(idx1, edgeInfo);
@@ -137,7 +146,7 @@ export class RailwayGraph {
     }
 
     static initFromString(jsonString: string): RailwayGraph {
-        const dbLines: Line[] = JSON.parse(jsonString);
+        const dbLines: Line[] = JSON.parse(jsonString) as Line[];
         return new RailwayGraph(dbLines);
     }
 
@@ -145,7 +154,7 @@ export class RailwayGraph {
         return this.mpStationName2ID.has(stationName);
     }
 
-    getStationIdxByName(stationName: string): number {
+    getStationIdxByName(stationName: string): StationIdxInGraph {
         const id0 = this.mpStationName2ID.get(stationName);
         assertIsDefined(id0, 'id0');
         const idx0 = this.mpStationId2Index.get(id0);
@@ -153,21 +162,21 @@ export class RailwayGraph {
         return idx0;
     }
 
-    getStationNameByIdx(idx: number): string {
+    getStationNameByIdx(idx: StationIdxInGraph): string {
         return this.stationIdx2Name[idx];
     }
 
-    getEdge(idx0: number, idx1: number): EdgeInfo {
+    getEdge(idx0: StationIdxInGraph, idx1: StationIdxInGraph): EdgeInfo {
         const edgeInfo = this.edges.get(idx0)?.get(idx1);
         assertIsDefined(edgeInfo, 'edgeInfo');
         return edgeInfo;
     }
 
     /** ダイクストラグラフ上の最短経路を返す */
-    getShortestPathOfIdxs(srcStationIdx: number, dstStationIdx: number): number[] {
+    getShortestPathOfIdxs(srcStationIdx: StationIdxInGraph, dstStationIdx: StationIdxInGraph): StationIdxInGraph[] {
         this.dijkstra.build(srcStationIdx);
         void this.dijkstra.get(dstStationIdx);
-        const restored = this.dijkstra.restore(dstStationIdx);
+        const restored = this.dijkstra.restore(dstStationIdx) as StationIdxInGraph[];
         return restored;
     }
 }
