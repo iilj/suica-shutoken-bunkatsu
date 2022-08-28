@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Suica首都圏エリア同一運賃分割ソルバー</title>
+    <link rel="icon" href="./favicon.ico" />
+    <!-- Twitter card template -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@iiljj" />
+    <meta
+      name="twitter:title"
+      content="Suica首都圏エリア同一運賃分割ソルバー"
+    />
+    <meta name="twitter:description" content="運賃分割．" />
+    <meta
+      name="twitter:image"
+      content="https://iilj.github.io/txt/images/dog_shibainu_brown2.png"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <style>
+      textarea {
+        font-family: monospace;
+      }
+
+      code {
+        white-space: normal;
+      }
+
+      h2:not(:first-child) {
+        margin-top: 3rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="./"
+          >Suica首都圏エリア同一運賃分割ソルバー</a
+        >
+      </div>
+    </nav>
+
+    <div class="container">
+      <h2>説明</h2>
+      <div>
+        <p>
+          指定された区間を，同一運賃区間が最多となるように分割します．<a
+            href="https://www.jrepoint.jp/point/append/railway/"
+            >リピートポイントサービス</a
+          >でポイントを貯めるための計画に使えます．
+        </p>
+        <p>
+          <a href="https://www.jreast.co.jp/suica/area/tokyo/"
+            >Suica首都圏利用可能エリア</a
+          >内の駅を入力してください．
+        </p>
+      </div>
+
+      <h2>Form</h2>
+      <div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">出発</span>
+          <input
+            class="form-control"
+            type="text"
+            id="js-ssb-input-begin"
+            value="東京"
+            placeholder="駅名を入力"
+          />
+        </div>
+
+        <div class="mb-3" id="js-ssb-mid-inputs-parent"></div>
+
+        <div class="mb-3">
+          <button
+            id="js-ssb-button-mid-inputs-add"
+            type="button"
+            class="btn btn-success"
+          >
+            ＋ 経由駅を追加
+          </button>
+          <button
+            id="js-ssb-button-mid-inputs-pop"
+            type="button"
+            class="btn btn-danger"
+          >
+            − 経由駅を削除
+          </button>
+        </div>
+
+        <div class="input-group mb-3">
+          <span class="input-group-text">到着</span>
+          <input
+            class="form-control"
+            type="text"
+            id="js-ssb-input-end"
+            value="秋葉原"
+            placeholder="駅名を入力"
+          />
+        </div>
+
+        <div class="form-check form-switch mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="js-ssb-input-display-kilo"
+            checked
+          />
+          <label class="form-check-label" for="js-ssb-input-display-kilo"
+            >営業キロ情報を表示する</label
+          >
+        </div>
+
+        <div class="mb-3">
+          <button type="button" class="btn btn-primary" id="js-ssb-submit">
+            Submit
+          </button>
+        </div>
+      </div>
+
+      <div id="js-ssb-alert-parent" style="display: none">
+        <div id="js-ssb-alert" class="alert alert-danger" role="alert"></div>
+      </div>
+
+      <div id="js-ssb-result" style="display: none">
+        <h2>入力されたルート</h2>
+        <div id="js-ssb-reuslt-route"></div>
+        <h2>分割結果</h2>
+        <div class="accordion" id="js-ssb-reuslt-split"></div>
+      </div>
+
+      <h2>補足</h2>
+      <ul>
+        <li>
+          運賃表の情報は，<a
+            href="http://www.desktoptetsu.com/unchinkeisan.htm#tab8"
+            >JRの運賃計算ルールは複雑すぎる</a
+          >
+          に掲載されたものを加工して使用しています．
+        </li>
+        <li>
+          営業キロの情報は，<a
+            href="http://www.chikipage.net/rail/line.php?kaisha=2"
+            >路線名一覧[JR東日本]</a
+          >
+          に掲載されたものを加工して使用しています．
+        </li>
+        <li>
+          上記の営業キロ情報は古いため，新駅開業，営業キロ変更，新規路線開業については手動で対応しています．
+          <ul>
+            <li>
+              対応した新駅開業：高輪ゲートウェイ，あしかがフラワーパーク，小田栄，Jヴィレッジ，羽沢横浜国大
+            </li>
+            <li>対応した営業キロ変更：吉川美南，吾妻線</li>
+            <li>対応した新規路線開業：東海道本線【相鉄線直通】</li>
+          </ul>
+        </li>
+        <li>
+          東海道本線【品鶴線】は営業上は品川駅と鶴見駅を結んでいる扱いとなっていますが，品川駅と横浜駅を結んでいるものとして扱います．
+        </li>
+        <li>
+          <a
+            href="https://ja.wikipedia.org/wiki/%E7%B5%8C%E8%B7%AF%E7%89%B9%E5%AE%9A%E5%8C%BA%E9%96%93"
+            >経路特定区間</a
+          >
+          には対応していません．
+        </li>
+        <li>Suica 首都圏エリアのうち，新幹線は除外しています．</li>
+      </ul>
+
+      <h2>作った人</h2>
+      <ul>
+        <li><a href="https://github.com/iilj">iilj (iilj)</a></li>
+        <li><a href="https://twitter.com/iiljj">si (@iiljj) / Twitter</a></li>
+      </ul>
+    </div>
+  </body>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"
+  ></script>
+  <script src="./autocomplete.js"></script>
+  <script src="./dist.js"></script>
+</html>
