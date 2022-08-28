@@ -6,10 +6,12 @@ describe('RailwayGraph', (): void => {
         const jsonString = await fs.readFile('static/index.json', 'utf-8');
         const railwayGraph = RailwayGraph.initFromString(jsonString);
 
-        expect(railwayGraph.getShortestPathOfIdxs(
-            railwayGraph.getStationIdxByName('品川'),
-            railwayGraph.getStationIdxByName('上野')
-        )).toEqual([
+        expect(
+            railwayGraph.getShortestPathOfIdxs(
+                railwayGraph.getStationIdxByName('品川'),
+                railwayGraph.getStationIdxByName('上野')
+            )
+        ).toEqual([
             railwayGraph.getStationIdxByName('品川'),
             railwayGraph.getStationIdxByName('高輪ゲートウェイ'),
             railwayGraph.getStationIdxByName('田町'),
@@ -21,6 +23,6 @@ describe('RailwayGraph', (): void => {
             railwayGraph.getStationIdxByName('秋葉原'),
             railwayGraph.getStationIdxByName('御徒町'),
             railwayGraph.getStationIdxByName('上野'),
-          ]);
+        ]);
     });
 });
