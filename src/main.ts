@@ -194,7 +194,7 @@ void (async () => {
                 console.log(routes, fare);
                 const kilo10 = sameFareSolver.getKilo10();
                 const fareElement = document.createElement('p');
-                fareElement.innerHTML = `通常運賃: ${fare} 円`;
+                fareElement.innerHTML = `通常運賃: ${fare} 円（※折返しや大回りが含まれる際，運賃が正しくない場合があります）`;
                 resultRoute.appendChild(fareElement);
 
                 // thead
@@ -324,7 +324,7 @@ void (async () => {
 
                     detailedPathList.forEach((detailedPath, index) => {
                         const h4 = document.createElement('h4');
-                        h4.innerText = `パターン${index + 1}`;
+                        h4.innerText = `パターン${index + 1}（途中下車${detailedPath.length - 1}回）`;
                         accordionBody.appendChild(h4);
 
                         const table = document.createElement('table');

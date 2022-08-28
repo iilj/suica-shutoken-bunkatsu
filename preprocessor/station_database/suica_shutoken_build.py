@@ -43,7 +43,8 @@ def main() -> None:
             'stations': stations
         }
         sens.append(senobj)
-    js = json.dumps(sens, ensure_ascii=False, indent=2)
+    # js = json.dumps(sens, ensure_ascii=False, indent=2)
+    js = json.dumps(sens, ensure_ascii=False)
 
     out_json_path = Path('.') / 'csv' / '2_suica_shutoken' / 'index.json'
     out_json_path.write_text(js, encoding='utf-8')
